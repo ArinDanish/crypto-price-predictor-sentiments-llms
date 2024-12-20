@@ -38,7 +38,7 @@ def main(
                 continue  # Skip to the next iteration if no trades are received
 
             for trade in trades:
-                message = topic.serialize(key=trade.pair, value=trade.to_dict())
+                message = topic.serialize(key=trade.pair, value=trade.model_dump())
 
                 producer.produce(topic=topic.name, value=message.value, key=message.key)
 
