@@ -33,9 +33,8 @@ def init_candle(trade: dict) -> dict:
         "low": trade["price"],
         "close": trade["price"],
         "volume": trade["volume"],
-        # ,
-        # 'timestamp_ms': trade['timestamp_ms'],
-        # 'pair': trade['pair'],
+        "timestamp_ms": trade["timestamp_ms"],
+        "pair": trade["pair"],
     }
 
 
@@ -48,8 +47,8 @@ def update_candle(candle: dict, trade: dict) -> dict:
     candle["high"] = max(candle["high"], trade["price"])
     candle["low"] = min(candle["low"], trade["price"])
     candle["volume"] += trade["volume"]
-    # candle['timestamp_ms'] = trade['timestamp_ms']
-    # candle['pair'] = trade['pair']
+    candle["timestamp_ms"] = trade["timestamp_ms"]
+    candle["pair"] = trade["pair"]
     return candle
 
 
@@ -99,6 +98,36 @@ def main(
     sdf = sdf.reduce(reducer=update_candle, initializer=init_candle)
 
     sdf = sdf.current()
+
+    # Extract open, high, low, close, volume, timestamp_ms, pair from the dataframe
+    sdf["open"] = sdf["value"]["open"]
+    sdf["high"] = sdf["value"]["high"]
+    sdf["low"] = sdf["value"]["low"]
+    sdf["close"] = sdf["value"]["close"]
+    sdf["volume"] = sdf["value"]["volume"]
+    sdf["timestamp_ms"] = sdf["value"]["timestamp_ms"]
+    sdf["pair"] = sdf["value"]["pair"]
+
+    # Extract window start and end timestamps
+    sdf["window_start_ms"] = sdf["start"]
+    sdf["window_end_ms"] = sdf["end"]
+
+    # keep only the relevant columns
+    sdf = sdf[
+        [
+            "pair",
+            "timestamp_ms",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "window_start_ms",
+            "window_end_ms",
+        ]
+    ]
+
+    sdf = sdf.update(lambda value: logger.info(f"Candle: {value}"))
 
     sdf = sdf.to_topic(topic=output_topic)
 
